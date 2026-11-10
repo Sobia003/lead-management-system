@@ -1,0 +1,294 @@
+{
+  "name": "Lead Management",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4b0e53ca-f276-46fd-a27d-6c24c8777372",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-form",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b31b0d74-799a-4a23-8cb8-e869ede95ff7",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9d564345-578d-49fb-a6ee-9421ee5bca39",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "b80906e8-10b2-40ce-a1e6-571168660a68",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8595abec-f832-472d-854c-ce3571dd705d",
+              "leftValue": "={{ $json.body.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "24afc122-cd6c-456b-a1ad-ac7b3cecc06f",
+              "leftValue": "={{ $json.body.company }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "da26b94a-3d44-4df5-8b87-22ee4bcbb308",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0a30e635-3e5c-46de-a07a-a38702ad92d3",
+      "name": "Validate_lead"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "YOUR_N8N_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_DATA_TABLE_NAME"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_type",
+              "keyValue": "=E-commerce"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        -16
+      ],
+      "id": "aa429d8c-d7a8-4294-b5c9-91c26d0d46cc",
+      "name": "assign_salesperson"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "deal",
+        "stage": "qualifiedtobuy",
+        "additionalFields": {
+          "associatedVids": "={{ [ $('Create_contact').item.json.vid ] }}",
+          "dealName": "={{ $('Webhook').item.json.body.company }} - {{ $('Webhook').item.json.body.message }}",
+          "dealOwner": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_HUBSPOT_OWNER_ID"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        -16
+      ],
+      "id": "68f63caa-af6a-41b4-aea9-330c066494e8",
+      "name": "Create_deal"
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL",
+        "toEmail": "YOUR_SALES_TEAM_EMAIL",
+        "subject": "New Lead Assigned to You",
+        "html": "=<h3>New Lead Assigned</h3>\n\n<p>Hello,</p>\n\n<p>A new lead has been assigned to you.</p>\n\n<p><strong>Deal:</strong> {{ $json.properties.dealname.value }}</p>\n\n<p><strong>Deal ID:</strong> {{ $json.dealId }}</p>\n\n<p>Please follow up with the lead.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1280,
+        224
+      ],
+      "id": "6f02ca36-12d6-4f8e-af43-15f2056a5792",
+      "name": "Email_salesperson"
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "We received your request",
+        "html": "=<p>Hi {{ $('Webhook').item.json.body.name }},</p>\n\n<p>Thank you for contacting us.</p>\n\n<p>We received your request for an e-commerce website and our team will get back to you shortly.</p>\n\n<p>Best regards,<br>Sales Team</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1264,
+        -16
+      ],
+      "id": "cde6321f-758d-4096-ad3e-5b96608bfc89",
+      "name": "Email_lead"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.body.email }}",
+        "additionalFields": {
+          "companyName": "={{ $json.body.company }}",
+          "firstName": "={{ $json.body.name }}",
+          "phoneNumber": "={{ $json.body.phone }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "ee6055e9-5f5e-40a2-97f8-e02964797f8d",
+      "name": "Create_contact"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate_lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate_lead": {
+      "main": [
+        [
+          {
+            "node": "Create_contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "assign_salesperson": {
+      "main": [
+        [
+          {
+            "node": "Create_deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_deal": {
+      "main": [
+        [
+          {
+            "node": "Email_salesperson",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email_lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email_salesperson": {
+      "main": [
+        []
+      ]
+    },
+    "Email_lead": {
+      "main": [
+        []
+      ]
+    },
+    "Create_contact": {
+      "main": [
+        [
+          {
+            "node": "assign_salesperson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}
